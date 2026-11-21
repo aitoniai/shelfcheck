@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2f6b3a">
+  <title>ShelfCheck</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main>
+    <div id="view-scan">
+      <button id="scan-btn" class="primary">Scan barcode</button>
+      <video id="camera" playsinline muted hidden></video>
+      <form id="manual-form" class="row">
+        <input id="manual-code" inputmode="numeric" autocomplete="off" placeholder="…or type the barcode" aria-label="Barcode">
+        <button>Check</button>
+      </form>
+      <p id="status" role="status"></p>
+      <header id="product" hidden>
+        <img id="product-img" alt="">
+        <div><h1 id="product-name"></h1><p id="product-brand"></p></div>
+      </header>
+      <div id="report"></div>
+      <p class="credit">Data: Open Food Facts &amp; Open Prices (ODbL)</p>
+    </div>
+
+    <div id="view-history" hidden>
+      <h1>History</h1>
+      <p id="history-empty">Nothing scanned yet.</p>
+      <ul id="history-list"></ul>
+    </div>
+
+    <div id="view-settings" hidden>
+      <h1>Settings</h1>
+      <form id="settings-form">
+        <label class="field"><span>Where I shop</span><select name="country"></select></label>
+        <label class="field"><span>Distances in</span>
+          <select name="units"><option value="km">Kilometres</option><option value="miles">Miles</option></select></label>
+        <label class="field"><span>Claude API key (optional, enables the AI check)</span>
+          <input name="apiKey" type="password" autocomplete="off" placeholder="sk-ant-…"></label>
+        <label class="field"><span>Claude model</span>
+          <select name="model">
+            <option value="claude-opus-5-5">Opus 5.5: best judgement</option>
+            <option value="claude-sonnet-5-5">Sonnet 5.5: balanced, about half the price</option>
+            <option value="claude-haiku-5-5">Haiku 5.5: cheapest, about 40× less</option>
+          </select></label>
+        <p class="hint">The key is stored only on this phone and sent only to Anthropic.</p>
+        <button class="primary">Save</button>
+        <p id="settings-saved" role="status" hidden>Saved.</p>
+      </form>
+    </div>
+  </main>
+
+  <nav>
+    <button id="tab-scan" aria-current="page">Scan</button>
+    <button id="tab-history">History</button>
+    <button id="tab-settings">Settings</button>
+  </nav>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "_note": "Hand-made in Open Food Facts' shape: a chicken pack that was born in DE, reared in HU, packed in DE.",
+  "product": {
+    "code": "4000000000001",
+    "product_name": "Hähnchenbrustfilet",
+    "brands": "Example Farm",
+    "product_quantity": "400",
+    "product_quantity_unit": "g",
+    "ingredients": [{ "id": "en:chicken-breast", "text": "Hähnchenbrustfilet", "percent": 100, "percent_estimate": 100 }],
+    "nutriments": { "energy-kcal_100g": 105, "fat_100g": 1.5, "saturated-fat_100g": 0.4, "sugars_100g": 0, "salt_100g": 0.15, "proteins_100g": 23 },
+    "nutrient_levels": { "fat": "low", "saturated-fat": "low", "sugars": "low", "salt": "low" },
+    "nova_group": 1,
+    "nutriscore_grade": "a",
+    "ecoscore_grade": "c",
+    "ecoscore_data": { "agribalyse": { "co2_total": 4.5, "co2_agriculture": 3.6, "co2_processing": 0.3, "co2_packaging": 0.3, "co2_transportation": 0.2, "co2_distribution": 0.1 } },
+    "origins_tags": ["en:hungary"],
+    "emb_codes": "DE NI-12345 EG",
+    "emb_codes_tags": ["de-ni-12345-eg"],
+    "categories_tags": ["en:meats", "en:poultry", "en:chicken-breasts"],
+    "additives_tags": []
+  }
+}
