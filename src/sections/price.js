@@ -42,7 +42,7 @@ export default {
 
     const category = product.categories.at(-1);
     const similar = Object.entries(history)
-      .filter(([code, h]) => code !== product.code && h.pricePerKg && h.categories?.at(-1) === category)
+      .filter(([code, h]) => category && code !== product.code && h.pricePerKg && h.categories?.at(-1) === category)
       .map(([, h]) => h.pricePerKg);
     const categoryMedian = median(similar);
     if (categoryMedian) {

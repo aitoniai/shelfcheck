@@ -3,7 +3,7 @@ const CACHE = 'pf-v1';
 const SHELL = [
   './', 'index.html', 'app.css', 'manifest.webmanifest', 'icons/icon.svg',
   'src/main.js', 'src/report.js', 'src/scanner.js', 'src/store.js',
-  'src/sources/openfoodfacts.js', 'src/sources/openprices.js', 'src/services/ai.js',
+  'src/sources/openfoodfacts.js', 'src/sources/openprices.js', 'src/sources/label.js', 'src/services/ai.js',
   'src/geo/countries.js', 'src/geo/distance.js',
   'src/sections/index.js', 'src/sections/claims.js', 'src/sections/health.js', 'src/sections/processing.js',
   'src/sections/co2.js', 'src/sections/journey.js', 'src/sections/price.js', 'src/sections/nutrition.js',

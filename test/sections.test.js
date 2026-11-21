@@ -81,3 +81,42 @@ test('a section that throws does not break the report; AI section hides with no 
   assert.equal(results.find((r) => r.section.id === 'ai-claims').result, null);
   assert.ok(results.filter((r) => r.result).length >= 5);
 });
+
+test('label read by AI becomes a normal product: traffic lights, journey stages, packer code', async () => {
+  const { toRawProduct } = await import('../src/sources/label.js');
+  const aiOut = {
+    product_name: 'Hähnchen Brustfilet', brands: 'Hofgut', quantity_amount: 400, quantity_unit: 'g',
+    ingredients: [{ text: 'Hähnchenbrustfilet', percent: 100 }],
+    nutriments: { energy_kcal: 105, fat: 1.5, saturated_fat: 0.4, sugars: 0, salt: 1.6, proteins: 23, fiber: null },
+    origins: ['Germany'], packer_code: 'DE NI-12345 EG',
+    stages: [{ label: 'Reared', country: 'Hungary' }, { label: 'Slaughtered', country: 'Germany' }],
+    nova_group: 1,
+  };
+  const p = normalise(toRawProduct(aiOut, '4070308070346'));
+  assert.equal(p.source, 'label');
+  assert.equal(p.packerCountry, 'DE');
+  assert.deepEqual(p.nutrientLevels, { fat: 'low', 'saturated-fat': 'low', sugars: 'low', salt: 'high' });
+  assert.equal(p.labelStages, 'Reared: Hungary, Slaughtered: Germany');
+  const j = await journey.run({ product: p, settings, input: { stages: p.labelStages } });
+  assert.match(j.details[0], /Reared Hungary → Slaughtered Germany → Sold Germany/);
+  const results = await runSections(sections, { product: p, settings, input: {}, history: {}, services: noServices });
+  assert.ok(results.every((r) => !r.result || r.result.summary !== 'Unavailable right now'));
+});
+
+test('price: products without a category are not compared with each other', async () => {
+  const p = { ...load('chicken-de.json'), categories: [] };
+  const r = await price.run({ product: p, settings, input: { price: '6' }, history: { other: { pricePerKg: 1, categories: [] } }, services: noServices });
+  assert.equal(r.status, 'info');
+});
+
+test('AI second opinion asks once per product, then reuses the saved answer', async () => {
+  const { default: aiClaims } = await import('../src/sections/ai-claims.js');
+  let calls = 0;
+  const ai = { json: async () => { calls++; return { misleading: true, reasons: ['only 15% olive oil'] }; } };
+  const product = load('olive-oil-blend.json');
+  const first = await aiClaims.run({ product, history: {}, services: { ai } });
+  const second = await aiClaims.run({ product, history: { [product.code]: { aiClaims: first.remember.aiClaims } }, services: { ai } });
+  assert.equal(calls, 1);
+  assert.equal(second.summary, 'Could be misleading');
+  assert.deepEqual(second.remember, first.remember);
+});

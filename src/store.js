@@ -19,3 +19,11 @@ export function saveScan(product, input, extra = {}) {
   history[product.code] = { name: product.name, categories: product.categories, scannedAt: new Date().toISOString(), input, ...extra };
   write('pf.history', history);
 }
+
+/** Products read from label photos by AI: { [barcode]: raw Open Food Facts-shaped product }. */
+export const getLabel = (code) => read('pf.labels', {})[code] ?? null;
+export function saveLabel(code, raw) {
+  const labels = read('pf.labels', {});
+  labels[code] = raw;
+  write('pf.labels', labels);
+}

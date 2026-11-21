@@ -1,10 +1,11 @@
 import sections from './sections/index.js';
 import { runSections, renderReport } from './report.js';
-import { fetchProduct } from './sources/openfoodfacts.js';
+import { fetchProduct, normalise } from './sources/openfoodfacts.js';
 import { fetchPrices } from './sources/openprices.js';
+import { readLabel, photoToBase64 } from './sources/label.js';
 import { createAi } from './services/ai.js';
 import { canScan, startScan } from './scanner.js';
-import { getSettings, saveSettings, getHistory, saveScan } from './store.js';
+import { getSettings, saveSettings, getHistory, saveScan, getLabel, saveLabel } from './store.js';
 import { COUNTRIES, SHOP_COUNTRIES } from './geo/countries.js';
 
 const $ = (id) => document.getElementById(id);
@@ -60,13 +61,21 @@ async function openProduct(code) {
   setStatus('Looking up product…');
   $('product').hidden = true;
   $('report').replaceChildren();
-  let product;
+  $('label-panel').hidden = true;
+  let product = null, offError = null;
   try {
     product = await fetchProduct(code);
   } catch (err) {
-    return setStatus(`Couldn't reach Open Food Facts: ${err.message}`);
+    offError = err;
   }
-  if (!product) return setStatus(`Barcode ${code} isn't in Open Food Facts yet. You can add it at openfoodfacts.org.`);
+  // A freshly added Open Food Facts entry can be empty; treat it like a missing one.
+  if (product && !product.brand && !product.ingredients.length && product.nutriments.energyKcal === null && product.name === 'Unknown product') product = null;
+  const saved = product ? null : getLabel(code);
+  if (saved) product = normalise(saved, code);
+  if (!product) {
+    if (offError) return setStatus(`Couldn't reach Open Food Facts: ${offError.message}`);
+    return showLabelPanel(code);
+  }
 
   setStatus('');
   const img = $('product-img');
@@ -74,10 +83,15 @@ async function openProduct(code) {
   img.onerror = () => { img.hidden = true; };
   img.src = product.imageUrl ?? '';
   $('product-name').textContent = product.name;
-  $('product-brand').textContent = [product.brand, product.size && `${product.size.amount} ${product.size.unit}`].filter(Boolean).join(' · ');
+  $('product-brand').textContent = [
+    product.brand,
+    product.size && `${product.size.amount} ${product.size.unit}`,
+    product.source === 'label' && 'read from your label photos by AI',
+  ].filter(Boolean).join(' · ');
   $('product').hidden = false;
 
   const input = { ...(getHistory()[code]?.input ?? {}) };
+  if (!input.stages && product.labelStages) input.stages = product.labelStages;
   const refresh = async () => {
     const settings = getSettings();
     const ctx = {
@@ -90,6 +104,48 @@ async function openProduct(code) {
   };
   await refresh();
 }
+
+// ---- Not in Open Food Facts: read the label with AI ----
+let labelCode = null, labelPhotos = [];
+
+function showLabelPanel(code) {
+  labelCode = code;
+  labelPhotos = [];
+  const hasKey = !!getSettings().apiKey;
+  setStatus(`Open Food Facts has no details for barcode ${code} yet.`);
+  $('label-help').textContent = hasKey
+    ? 'Take photos of the front, the ingredients, the nutrition table and any origin text or oval mark (e.g. "DE NW-12345 EG").'
+    : 'To read the label with AI, add your Claude API key in Settings first.';
+  $('label-add').hidden = !hasKey;
+  $('label-count').textContent = '';
+  $('label-read').disabled = true;
+  $('label-read').hidden = !hasKey;
+  $('off-add').href = `https://world.openfoodfacts.org/cgi/product.pl?type=search_or_add&action=process&code=${encodeURIComponent(code)}`;
+  $('label-panel').hidden = false;
+}
+
+$('label-photo').addEventListener('change', async (e) => {
+  const files = [...e.target.files];
+  e.target.value = ''; // let the same button take another photo
+  for (const f of files) labelPhotos.push(await photoToBase64(f));
+  $('label-count').textContent = `${labelPhotos.length} photo${labelPhotos.length === 1 ? '' : 's'} ready`;
+  $('label-read').disabled = labelPhotos.length === 0;
+});
+
+$('label-read').addEventListener('click', async () => {
+  const code = labelCode;
+  $('label-read').disabled = true;
+  setStatus('Reading the label… this can take up to a minute.');
+  try {
+    const raw = await readLabel(createAi(getSettings()), code, labelPhotos);
+    if (!raw.product_name && !raw.ingredients.length) throw new Error("couldn't read a product from these photos. Try sharper, closer photos.");
+    saveLabel(code, raw);
+    openProduct(code);
+  } catch (err) {
+    setStatus(`Label reading failed: ${err.message}`);
+    $('label-read').disabled = false;
+  }
+});
 
 // ---- History ----
 function renderHistory() {

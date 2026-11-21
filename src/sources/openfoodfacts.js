@@ -31,6 +31,19 @@ export function packerCountry(embTags = []) {
   return null;
 }
 
+// UK/EU front-of-pack thresholds per 100 g: [low up to, high above]. Same ones Open Food Facts uses.
+const LEVELS = { fat: [3, 17.5], 'saturated-fat': [1.5, 5], sugars: [5, 22.5], salt: [0.3, 1.5] };
+
+/** Traffic-light levels from per-100 g values, for products that don't come with them (e.g. read from a label). */
+export function nutrientLevels(n) {
+  const out = {};
+  for (const [key, [low, high]] of Object.entries(LEVELS)) {
+    const v = num(n[`${key}_100g`]);
+    if (v !== null) out[key] = v <= low ? 'low' : v > high ? 'high' : 'moderate';
+  }
+  return out;
+}
+
 /** Convert a raw Open Food Facts product into the app's Product shape. Sections only read this shape. */
 export function normalise(p, barcode = p.code) {
   const env = p.environmental_score_data ?? p.ecoscore_data ?? {};
@@ -58,7 +71,7 @@ export function normalise(p, barcode = p.code) {
       protein: num(n.proteins_100g),
       fiber: num(n.fiber_100g),
     },
-    nutrientLevels: p.nutrient_levels ?? {},
+    nutrientLevels: p.nutrient_levels ?? nutrientLevels(n),
     nova: num(p.nova_group),
     nutriscore: grade(p.nutriscore_grade),
     ecoGrade: grade(p.environmental_score_grade ?? p.ecoscore_grade),
@@ -77,5 +90,7 @@ export function normalise(p, barcode = p.code) {
     manufacturingPlaces: p.manufacturing_places || null,
     categories: p.categories_tags ?? [],
     additives: (p.additives_tags ?? []).map((t) => t.replace(/^en:/, '').toUpperCase()),
+    source: p.source ?? 'openfoodfacts', // 'label' = read from your photos by AI
+    labelStages: p.label_stages ?? '',
   };
 }

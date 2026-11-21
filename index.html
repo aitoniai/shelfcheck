@@ -19,6 +19,15 @@
         <button>Check</button>
       </form>
       <p id="status" role="status"></p>
+      <section id="label-panel" class="card info" hidden>
+        <h2>Read the label instead</h2>
+        <p id="label-help"></p>
+        <label id="label-add" class="button">📷 Add photo
+          <input id="label-photo" type="file" accept="image/*" capture="environment" hidden></label>
+        <p id="label-count" role="status"></p>
+        <button id="label-read" class="primary">Read label with AI</button>
+        <p><a id="off-add" target="_blank" rel="noopener">Add this product to Open Food Facts</a>, so it's found for everyone next time.</p>
+      </section>
       <header id="product" hidden>
         <img id="product-img" alt="">
         <div><h1 id="product-name"></h1><p id="product-brand"></p></div>
